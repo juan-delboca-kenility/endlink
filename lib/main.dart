@@ -30,6 +30,9 @@ void main() {
   final httpService = HttpServiceImpl();
   GetIt.I.registerSingleton<HttpService>(httpService);
 
+  final mediaService = MediaServiceImpl(baseURL: 'https://endlink-api-beta.truvideo.com', httpService: httpService);
+  GetIt.I.registerSingleton<MediaService>(mediaService);
+
 
 }
 
