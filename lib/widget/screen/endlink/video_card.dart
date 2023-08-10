@@ -7,6 +7,7 @@ import 'package:enterprise_endlink/service/media/_interface.dart';
 import 'package:enterprise_endlink/widget/screen/endlink/card.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:intl/intl.dart';
 import 'package:video_player/video_player.dart';
 
 class VideoCard extends StatefulWidget {
@@ -45,9 +46,9 @@ class _VideoCardState extends State<VideoCard> {
     MediaService mediaService = GetIt.I.get();
     mediaService.fetchEndlink("BDrA7de3").then((value) => setState(() {
           endlinkModel = value;
+          _initializeVideoPlayer(_currentIndex);
           log('[CHALLENGE] value: ${endlinkModel?.videos?[0].url}');
         }));
-    _initializeVideoPlayer(_currentIndex);
     super.initState();
   }
 
@@ -136,7 +137,7 @@ class _VideoCardState extends State<VideoCard> {
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Text(
-                  "Hello there MR Parlopiano Johhn",
+                  "Hello there!",
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                   ),
@@ -148,7 +149,7 @@ class _VideoCardState extends State<VideoCard> {
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                Text("ROS12321 - Last update ${DateTime.fromMillisecondsSinceEpoch(endlinkModel?.lastUpdate ?? 0).toString()}"),
+                Text("ROS12321 - Last update ${DateFormat('MMM dd, yyyy').format(DateTime.fromMillisecondsSinceEpoch(endlinkModel?.lastUpdate ?? 0))}"),
                 //jobservice + last edit
                 //greetings/ tilte
               ],
