@@ -5,6 +5,7 @@ import 'package:enterprise_endlink/model/endlink_model.dart';
 import 'package:enterprise_endlink/model/video_model.dart';
 import 'package:enterprise_endlink/service/media/_interface.dart';
 import 'package:enterprise_endlink/widget/screen/endlink/card.dart';
+import 'package:enterprise_endlink/widget/screen/endlink/controls.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
@@ -32,12 +33,24 @@ class _VideoCardState extends State<VideoCard> {
     log('[CHALLENGE] value: ${currentVideo?.url ?? ""}');
     _videoController = VideoPlayerController.networkUrl(Uri.parse(currentVideo?.url ?? ""))
       ..initialize().then((_) {
-        setState(() {});
         final shouldPlay = currentVideo?.ordinal == 0;
         if (shouldPlay) {
           _videoController.play();
         }
+        setState(() {});
       });
+    _videoController.addListener(() {
+      _videoCheckEnded();
+    });
+  }
+
+  _videoCheckEnded() async {
+    final position = await _videoController.position ?? const Duration(seconds: 0);
+    final videoEnded = (position  == _videoController.value.duration);
+    if(videoEnded && _currentIndex == 0) {
+      _carouselController.nextPage();
+    }
+    setState(() {});
   }
 
   @override
@@ -113,6 +126,28 @@ class _VideoCardState extends State<VideoCard> {
                                               : const Icon(Icons.play_circle, color: Colors.white, size: 35),
                                         ),
                                       ),
+                                      Positioned(
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
+                                        child: CustomVideoPlayerControls(
+                                          margin: const EdgeInsets.all(16.0),
+                                          playing: _videoController.value.isPlaying,
+                                          position: _videoController.value.position.inMilliseconds,
+                                          duration: _videoController.value.duration.inMilliseconds,
+                                          seek: (pos) async {
+                                            await seek(Duration(milliseconds: pos));
+                                          },
+                                          onPlayPressed: () {
+                                            if (_videoController.value.isPlaying) {
+                                              _videoController.pause();
+                                            } else {
+                                              _videoController.play();
+                                            }
+                                            setState(() {});
+                                          },
+                                        ),
+                                      ),
                                     ])
                                   : Container(
                                       color: Colors.grey,
@@ -149,12 +184,22 @@ class _VideoCardState extends State<VideoCard> {
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                Text("ROS12321 - Last update ${DateFormat('MMM dd, yyyy').format(DateTime.fromMillisecondsSinceEpoch(endlinkModel?.lastUpdate ?? 0))}"),
+                Text(
+                    "ROS12321 - Last update ${DateFormat('MMM dd, yyyy').format(DateTime.fromMillisecondsSinceEpoch(endlinkModel?.lastUpdate ?? 0))}"),
                 //jobservice + last edit
                 //greetings/ tilte
               ],
             ),
           ],
         ));
+  }
+
+  Future<void> seek(Duration position) async {
+    log("[video] seek $position");
+
+    final d = _videoController.value.duration.inMilliseconds;
+    final m = position.inMilliseconds.clamp(0, d);
+    position = Duration(milliseconds: m);
+    await _videoController.seekTo(position);
   }
 }
