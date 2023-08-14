@@ -251,7 +251,6 @@ class _VideoCardState extends State<VideoCard> {
               ],
             )));
   }
-
   Future<void> seek(Duration position) async {
     log("[video] seek $position");
 

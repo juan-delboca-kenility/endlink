@@ -23,7 +23,8 @@ class _NavigationCardState extends State<NavigationCard> {
           NavigationButton(
             icon: Icons.description_outlined,
             title: "Video Sumary",
-            onPressed: () => _showPopup(context, summary != "" ? summary : "This video dont have a summary yet, wait a few minutes and try again"),
+            onPressed: () =>
+                _showPopup(context, summary != "" ? summary : "This video dont have a summary yet, wait a few minutes and try again"),
           ),
           const SizedBox(
             height: 5,
@@ -31,7 +32,7 @@ class _NavigationCardState extends State<NavigationCard> {
           NavigationButton(
             icon: Icons.remove_red_eye_outlined,
             title: "Inspection",
-            onPressed: () => {},
+            onPressed: () => _showSnackBar("To be implemented"),
           ),
           const SizedBox(
             height: 5,
@@ -39,7 +40,7 @@ class _NavigationCardState extends State<NavigationCard> {
           NavigationButton(
             icon: Icons.call,
             title: "Call Us",
-            onPressed: () => {},
+            onPressed: () => _showSnackBar("To be implemented"),
           ),
           const SizedBox(
             height: 5,
@@ -47,7 +48,7 @@ class _NavigationCardState extends State<NavigationCard> {
           NavigationButton(
             icon: Icons.calendar_today_outlined,
             title: "View Estimate",
-            onPressed: () => {},
+            onPressed: () => _showSnackBar("To be implemented"),
           ),
         ],
       ),
@@ -73,9 +74,9 @@ class _NavigationCardState extends State<NavigationCard> {
                     children: [
                       const Expanded(
                           child: Text(
-                        'Video Summary',
-                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
-                      )),
+                            'Video Summary',
+                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+                          )),
                       GestureDetector(
                         onTap: () {
                           Navigator.of(context).pop();
@@ -86,6 +87,44 @@ class _NavigationCardState extends State<NavigationCard> {
                   ),
                   const SizedBox(height: 20),
                   Text(summary),
+                ],
+              ),
+            ),
+          );
+        });
+  }
+
+  _showSnackBar(String message) {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(2.0))),
+            backgroundColor: Colors.white,
+            content: SizedBox(
+              width: 200,
+              height: 100,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      const Expanded(
+                          child: Text(
+                            'To be implemented',
+                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+                          )),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  const Text("This feature will be implemented in newer versions"),
                 ],
               ),
             ),

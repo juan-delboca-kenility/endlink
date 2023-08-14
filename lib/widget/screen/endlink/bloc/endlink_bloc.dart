@@ -17,13 +17,18 @@ class EndlinkBloc extends Bloc<EndlinkEvent, EndlinkDataState> {
     on<GetEnlinkModel>(_getEndlinkModel);
     on<UpdateUrl>(_updateUrl);
     on<UpdateCurrentIndex>(_updateCurrentIndex);
+    on<UpdateError>(_updateError);
   }
 
   Future<FutureOr<void>> _getEndlinkModel(GetEnlinkModel event, Emitter emit) async {
     emit(state.copyWith(loading: true));
-    MediaService mediaService = GetIt.I.get();
-    final endlinkModel = await mediaService.fetchEndlink(state.url);
-    emit(state.copyWith(endlinkModel: endlinkModel, loading: false));
+    try {
+      MediaService mediaService = GetIt.I.get();
+      final endlinkModel = await mediaService.fetchEndlink(state.url);
+      emit(state.copyWith(endlinkModel: endlinkModel, loading: false));
+    } catch (_){
+      emit(state.copyWith(error: true, loading: false));
+    }
   }
 
   FutureOr<void> _updateUrl(UpdateUrl event, Emitter<EndlinkDataState> emit) {
@@ -31,5 +36,9 @@ class EndlinkBloc extends Bloc<EndlinkEvent, EndlinkDataState> {
   }
   FutureOr<void> _updateCurrentIndex(UpdateCurrentIndex event, Emitter<EndlinkDataState> emit) {
     emit(state.copyWith(currentIndex: event.index));
+  }
+
+  FutureOr<void> _updateError(UpdateError event, Emitter<EndlinkDataState> emit) {
+    emit(state.copyWith(error: event.error));
   }
 }

@@ -52,6 +52,12 @@ class _BodyState extends State<_Body> {
   Widget build(BuildContext context) {
     final initialUrl = context.select((EndlinkBloc bloc) => bloc.state.url);
     final EndlinkBloc bloc = context.read<EndlinkBloc>();
+    final error = context.select((EndlinkBloc bloc) => bloc.state.error);
+
+    // if (error) {
+    //   bloc.add(UpdateError(error: false));
+    //   _showErrorMessage(context);
+    // }
     return SafeArea(
       child: Scaffold(
         backgroundColor: Colors.grey.shade300,
@@ -61,7 +67,7 @@ class _BodyState extends State<_Body> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  VideoCard(),
+                  const VideoCard(),
                   const SizedBox(
                     height: 5,
                   ),
@@ -159,6 +165,46 @@ class _BodyState extends State<_Body> {
         ),
       ),
     );
+  }
+
+  _showErrorMessage(BuildContext context) {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(2.0))),
+            backgroundColor: Colors.white,
+            content: SizedBox(
+              width: 200,
+              height: 100,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      const Expanded(
+                          child: Text(
+                        'Error',
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+                      )),
+                      GestureDetector(
+                        onTap: () {
+                          if (mounted) {
+                            Navigator.of(context).pop();
+                          }
+                        },
+                        child: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  const Text("ErrorFetching the data"),
+                ],
+              ),
+            ),
+          );
+        });
   }
 
   void _launchURL() async {

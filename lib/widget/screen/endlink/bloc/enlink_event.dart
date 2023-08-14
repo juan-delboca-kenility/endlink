@@ -15,3 +15,8 @@ class UpdateCurrentIndex extends EndlinkEvent {
 
   UpdateCurrentIndex({required this.index});
 }
+class UpdateError extends EndlinkEvent {
+  final bool error;
+
+  UpdateError({required this.error});
+}
