@@ -26,7 +26,6 @@ class _VideoCardState extends State<VideoCard> {
 
   late VideoPlayerController _videoController;
   String previousVideoURL = '';
-  int _currentIndex = 0;
 
   void _initializeVideoPlayer(int index) {
     final endlinkModel = context.read<EndlinkBloc>().state.endlinkModel;
@@ -34,10 +33,10 @@ class _VideoCardState extends State<VideoCard> {
       _videoController.dispose();
     } catch (_) {}
     final VideoMediaModel? currentVideo = endlinkModel.videos?[index];
-    _videoController = VideoPlayerController.networkUrl(Uri.parse(currentVideo?.url ?? ""),
-        // closedCaptionFile: _loadCaptions(endlinkModel.videos?[index].captionsUrl ?? "")
-    )
-      ..initialize().then((_) {
+    _videoController = VideoPlayerController.networkUrl(
+      Uri.parse(currentVideo?.url ?? ""),
+      // closedCaptionFile: _loadCaptions(endlinkModel.videos?[index].captionsUrl ?? "")
+    )..initialize().then((_) {
         final shouldPlay = currentVideo?.ordinal == 0;
         if (shouldPlay) {
           _videoController.play();
@@ -50,9 +49,8 @@ class _VideoCardState extends State<VideoCard> {
   }
 
   Future<ClosedCaptionFile> _loadCaptions(String url) async {
-    log('CHALLENGE: url: $url  && currentIndex: $_currentIndex');
     String vtt = "WEBVTT";
-    if(url != "") {
+    if (url != "") {
       MediaService mediaService = GetIt.I.get();
       vtt = await mediaService.fetchVtt(url);
     }
@@ -61,10 +59,11 @@ class _VideoCardState extends State<VideoCard> {
   }
 
   _videoCheckEnded() async {
+    final currentIndex = context.read<EndlinkBloc>().state.currentIndex;
     // if(!_videoController.value.isInitialized|| _videoController.value.duration == const Duration(milliseconds: 0)) return;
     final position = await _videoController.position ?? const Duration(seconds: 9999999);
     final videoEnded = (position == _videoController.value.duration);
-    if (videoEnded && _currentIndex == 0) {
+    if (videoEnded && currentIndex == 0) {
       log('CHALLENGE: next page position: $position, duration: ${_videoController.value.duration} and videoEnded: $videoEnded');
       _carouselController.nextPage();
     }
@@ -78,18 +77,19 @@ class _VideoCardState extends State<VideoCard> {
 
   @override
   Widget build(BuildContext context) {
+    final bloc = context.select((EndlinkBloc bloc) => bloc);
     final endlinkModel = context.select((EndlinkBloc bloc) => bloc.state.endlinkModel);
     final loading = context.select((EndlinkBloc bloc) => bloc.state.loading);
-    final VideoMediaModel? currentVideo = endlinkModel.videos?[_currentIndex];
+    final currentIndex = context.select((EndlinkBloc bloc) => bloc.state.currentIndex);
+    final VideoMediaModel? currentVideo = endlinkModel.videos?[currentIndex];
 
     log('CHALLENGE: build');
     if (currentVideo?.url != previousVideoURL && (endlinkModel.videos?.length ?? 0) > 0) {
       log('CHALLENGE: videos > 0');
-      _initializeVideoPlayer(_currentIndex);
+      _initializeVideoPlayer(currentIndex);
       previousVideoURL = currentVideo?.url ?? '';
     }
 
-    // _initializeVideoPlayer(_currentIndex);
     return CustomCard(
         padding: 5,
         child: Column(
@@ -108,8 +108,9 @@ class _VideoCardState extends State<VideoCard> {
                       enableInfiniteScroll: false,
                       onPageChanged: (index, reason) {
                         setState(() {
-                          _currentIndex = index;
-                          _initializeVideoPlayer(index);
+                          bloc.add(UpdateCurrentIndex(index: index));
+                          // _initializeVideoPlayer(index);
+                          setState(() {});
                         });
                       },
                       viewportFraction: 1,
@@ -199,25 +200,31 @@ class _VideoCardState extends State<VideoCard> {
             const SizedBox(
               height: 10,
             ),
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Text(
-                  "Hello there!",
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Text(
+                    "Hello there Mr. ${endlinkModel?.lastName}!",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                    ),
+                    textAlign: TextAlign.start,
                   ),
-                  textAlign: TextAlign.start,
-                ),
-                //greetings/ tilte
-              ],
+                  //greetings/ tilte
+                ],
+              ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Text(
-                    "${endlinkModel.jobService} - Last update ${DateFormat('MMM dd, yyyy').format(DateTime.fromMillisecondsSinceEpoch(endlinkModel?.lastUpdate ?? 0))}"),
-              ],
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Text(
+                      "${endlinkModel.jobService} - Last update ${DateFormat('MMM dd, yyyy').format(DateTime.fromMillisecondsSinceEpoch(endlinkModel?.lastUpdate ?? 0))}"),
+                ],
+              ),
             ),
           ],
         ));

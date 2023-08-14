@@ -3,7 +3,7 @@ class VideoMediaModel {
   final String thumbnail;
   final String captionsUrl;
   final String title;
-  final String description;
+  final String summary;
   final int ordinal;
 
   VideoMediaModel({
@@ -11,7 +11,7 @@ class VideoMediaModel {
     this.thumbnail = "",
     this.captionsUrl = "",
     this.title = "",
-    this.description = "",
+    this.summary = "",
     this.ordinal = 0,
   });
 
@@ -21,7 +21,7 @@ class VideoMediaModel {
       thumbnail: json['thumbnail'] ?? "",
       captionsUrl: json['captionsUrl'] ?? "",
       title: json['title'] ?? "",
-      description: json['description'] ?? "",
+      summary: json['summary'] ?? "",
       ordinal: json['ordinal'] ?? 0,
     );
   }

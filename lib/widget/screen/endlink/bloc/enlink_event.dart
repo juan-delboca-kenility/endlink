@@ -10,3 +10,8 @@ class UpdateUrl extends EndlinkEvent {
 
   UpdateUrl({required this.url});
 }
+class UpdateCurrentIndex extends EndlinkEvent {
+  final int index;
+
+  UpdateCurrentIndex({required this.index});
+}

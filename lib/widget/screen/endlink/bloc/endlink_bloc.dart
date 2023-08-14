@@ -16,6 +16,7 @@ class EndlinkBloc extends Bloc<EndlinkEvent, EndlinkDataState> {
   EndlinkBloc() : super(EndlinkDataState.initial()) {
     on<GetEnlinkModel>(_getEndlinkModel);
     on<UpdateUrl>(_updateUrl);
+    on<UpdateCurrentIndex>(_updateCurrentIndex);
   }
 
   Future<FutureOr<void>> _getEndlinkModel(GetEnlinkModel event, Emitter emit) async {
@@ -27,5 +28,8 @@ class EndlinkBloc extends Bloc<EndlinkEvent, EndlinkDataState> {
 
   FutureOr<void> _updateUrl(UpdateUrl event, Emitter<EndlinkDataState> emit) {
     emit(state.copyWith(url: event.url));
+  }
+  FutureOr<void> _updateCurrentIndex(UpdateCurrentIndex event, Emitter<EndlinkDataState> emit) {
+    emit(state.copyWith(currentIndex: event.index));
   }
 }
