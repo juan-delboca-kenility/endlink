@@ -41,4 +41,12 @@ class MediaServiceImpl extends MediaService {
       return null;
     }
   }
+
+  @override
+  Future<String> fetchVtt(String url) async {
+    final response = await httpService.get(
+      Uri.parse(url),
+    );
+    return response.data.toString();
+  }
 }

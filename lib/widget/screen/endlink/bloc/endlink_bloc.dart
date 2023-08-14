@@ -21,11 +21,8 @@ class EndlinkBloc extends Bloc<EndlinkEvent, EndlinkDataState> {
   Future<FutureOr<void>> _getEndlinkModel(GetEnlinkModel event, Emitter emit) async {
     emit(state.copyWith(loading: true));
     MediaService mediaService = GetIt.I.get();
-    log('CHALLENGE about to gett the endlink');
     final endlinkModel = await mediaService.fetchEndlink(state.url);
-    log('CHALLENGE storing the endlink');
     emit(state.copyWith(endlinkModel: endlinkModel, loading: false));
-    log('CHALLENGE endlink stored');
   }
 
   FutureOr<void> _updateUrl(UpdateUrl event, Emitter<EndlinkDataState> emit) {

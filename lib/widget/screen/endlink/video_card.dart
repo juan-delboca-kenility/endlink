@@ -34,7 +34,9 @@ class _VideoCardState extends State<VideoCard> {
       _videoController.dispose();
     } catch (_) {}
     final VideoMediaModel? currentVideo = endlinkModel.videos?[index];
-    _videoController = VideoPlayerController.networkUrl(Uri.parse(currentVideo?.url ?? ""))
+    _videoController = VideoPlayerController.networkUrl(Uri.parse(currentVideo?.url ?? ""),
+        // closedCaptionFile: _loadCaptions(endlinkModel.videos?[index].captionsUrl ?? "")
+    )
       ..initialize().then((_) {
         final shouldPlay = currentVideo?.ordinal == 0;
         if (shouldPlay) {
@@ -47,10 +49,23 @@ class _VideoCardState extends State<VideoCard> {
     });
   }
 
+  Future<ClosedCaptionFile> _loadCaptions(String url) async {
+    log('CHALLENGE: url: $url  && currentIndex: $_currentIndex');
+    String vtt = "WEBVTT";
+    if(url != "") {
+      MediaService mediaService = GetIt.I.get();
+      vtt = await mediaService.fetchVtt(url);
+    }
+    final vtgile = WebVTTCaptionFile(vtt);
+    return vtgile;
+  }
+
   _videoCheckEnded() async {
+    // if(!_videoController.value.isInitialized|| _videoController.value.duration == const Duration(milliseconds: 0)) return;
     final position = await _videoController.position ?? const Duration(seconds: 9999999);
     final videoEnded = (position == _videoController.value.duration);
     if (videoEnded && _currentIndex == 0) {
+      log('CHALLENGE: next page position: $position, duration: ${_videoController.value.duration} and videoEnded: $videoEnded');
       _carouselController.nextPage();
     }
     setState(() {});
@@ -58,7 +73,6 @@ class _VideoCardState extends State<VideoCard> {
 
   @override
   initState() {
-    _initializeVideoPlayer(_currentIndex);
     super.initState();
   }
 
@@ -68,13 +82,14 @@ class _VideoCardState extends State<VideoCard> {
     final loading = context.select((EndlinkBloc bloc) => bloc.state.loading);
     final VideoMediaModel? currentVideo = endlinkModel.videos?[_currentIndex];
 
-    if (currentVideo?.url != previousVideoURL) {
+    log('CHALLENGE: build');
+    if (currentVideo?.url != previousVideoURL && (endlinkModel.videos?.length ?? 0) > 0) {
+      log('CHALLENGE: videos > 0');
       _initializeVideoPlayer(_currentIndex);
       previousVideoURL = currentVideo?.url ?? '';
     }
 
-
-  // _initializeVideoPlayer(_currentIndex);
+    // _initializeVideoPlayer(_currentIndex);
     return CustomCard(
         padding: 5,
         child: Column(
@@ -97,14 +112,12 @@ class _VideoCardState extends State<VideoCard> {
                           _initializeVideoPlayer(index);
                         });
                       },
-                      height: 250,
                       viewportFraction: 1,
                     ),
                     items: endlinkModel?.videos?.map((video) {
                       return Builder(
                         builder: (BuildContext context) {
                           return Container(
-                              height: 250,
                               width: double.infinity,
                               margin: const EdgeInsets.symmetric(horizontal: 5.0),
                               decoration: BoxDecoration(
@@ -203,7 +216,7 @@ class _VideoCardState extends State<VideoCard> {
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Text(
-                    "ROS12321 - Last update ${DateFormat('MMM dd, yyyy').format(DateTime.fromMillisecondsSinceEpoch(endlinkModel?.lastUpdate ?? 0))}"),
+                    "${endlinkModel.jobService} - Last update ${DateFormat('MMM dd, yyyy').format(DateTime.fromMillisecondsSinceEpoch(endlinkModel?.lastUpdate ?? 0))}"),
               ],
             ),
           ],

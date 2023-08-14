@@ -5,11 +5,13 @@ import 'package:enterprise_endlink/model/video_model.dart';
 
 class EndlinkModel {
   final String title;
+  final String jobService;
   final int lastUpdate;
   final List<VideoMediaModel>? videos;
 
   EndlinkModel({
     this.title = "",
+    this.jobService = "",
     this.lastUpdate = 0,
     this.videos,
   });
@@ -17,6 +19,7 @@ class EndlinkModel {
   factory EndlinkModel.fromJson(Map<String, dynamic> json) {
     return EndlinkModel(
       title: json['title'] ?? "",
+      jobService: json['jobService'] ?? "",
       lastUpdate: json['lastUpdate'] ?? 0,
       videos: (json['media']['videos'] as List<dynamic>).map(_parseVideoModel).where((e) => e != null).map((e) => e!).toList(),
     );
