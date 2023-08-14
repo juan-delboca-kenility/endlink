@@ -25,6 +25,7 @@ class MediaServiceImpl extends MediaService {
 
   @override
   Future<EndlinkModel> fetchEndlink(String securityCode) async {
+    log('[CHALLENGE] : $baseURL/api/v1/end_link/$securityCode');
     final response = await httpService.get(
       Uri.parse("$baseURL/api/v1/end_link/$securityCode"),
     );

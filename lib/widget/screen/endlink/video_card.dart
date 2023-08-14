@@ -4,12 +4,15 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:enterprise_endlink/model/endlink_model.dart';
 import 'package:enterprise_endlink/model/video_model.dart';
 import 'package:enterprise_endlink/service/media/_interface.dart';
+import 'package:enterprise_endlink/widget/screen/endlink/bloc/endlink_bloc.dart';
 import 'package:enterprise_endlink/widget/screen/endlink/card.dart';
 import 'package:enterprise_endlink/widget/screen/endlink/controls.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import 'package:video_player/video_player.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class VideoCard extends StatefulWidget {
   const VideoCard({super.key});
@@ -22,15 +25,15 @@ class _VideoCardState extends State<VideoCard> {
   final CarouselController _carouselController = CarouselController();
 
   late VideoPlayerController _videoController;
+  String previousVideoURL = '';
   int _currentIndex = 0;
-  EndlinkModel? endlinkModel;
 
   void _initializeVideoPlayer(int index) {
+    final endlinkModel = context.read<EndlinkBloc>().state.endlinkModel;
     try {
-      _videoController?.dispose();
+      _videoController.dispose();
     } catch (_) {}
-    final VideoMediaModel? currentVideo = endlinkModel?.videos?[index];
-    log('[CHALLENGE] value: ${currentVideo?.url ?? ""}');
+    final VideoMediaModel? currentVideo = endlinkModel.videos?[index];
     _videoController = VideoPlayerController.networkUrl(Uri.parse(currentVideo?.url ?? ""))
       ..initialize().then((_) {
         final shouldPlay = currentVideo?.ordinal == 0;
@@ -45,9 +48,9 @@ class _VideoCardState extends State<VideoCard> {
   }
 
   _videoCheckEnded() async {
-    final position = await _videoController.position ?? const Duration(seconds: 0);
-    final videoEnded = (position  == _videoController.value.duration);
-    if(videoEnded && _currentIndex == 0) {
+    final position = await _videoController.position ?? const Duration(seconds: 9999999);
+    final videoEnded = (position == _videoController.value.duration);
+    if (videoEnded && _currentIndex == 0) {
       _carouselController.nextPage();
     }
     setState(() {});
@@ -55,18 +58,23 @@ class _VideoCardState extends State<VideoCard> {
 
   @override
   initState() {
-    log('[CHALLENGE] initstate');
-    MediaService mediaService = GetIt.I.get();
-    mediaService.fetchEndlink("BDrA7de3").then((value) => setState(() {
-          endlinkModel = value;
-          _initializeVideoPlayer(_currentIndex);
-          log('[CHALLENGE] value: ${endlinkModel?.videos?[0].url}');
-        }));
+    _initializeVideoPlayer(_currentIndex);
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
+    final endlinkModel = context.select((EndlinkBloc bloc) => bloc.state.endlinkModel);
+    final loading = context.select((EndlinkBloc bloc) => bloc.state.loading);
+    final VideoMediaModel? currentVideo = endlinkModel.videos?[_currentIndex];
+
+    if (currentVideo?.url != previousVideoURL) {
+      _initializeVideoPlayer(_currentIndex);
+      previousVideoURL = currentVideo?.url ?? '';
+    }
+
+
+  // _initializeVideoPlayer(_currentIndex);
     return CustomCard(
         padding: 5,
         child: Column(
@@ -78,7 +86,7 @@ class _VideoCardState extends State<VideoCard> {
                 child: Image.asset('assets/logo-color.png'),
               ),
             ),
-            endlinkModel != null
+            !loading
                 ? CarouselSlider(
                     carouselController: _carouselController,
                     options: CarouselOptions(
@@ -99,7 +107,9 @@ class _VideoCardState extends State<VideoCard> {
                               height: 250,
                               width: double.infinity,
                               margin: const EdgeInsets.symmetric(horizontal: 5.0),
-                              decoration: const BoxDecoration(color: Colors.amber),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade200,
+                              ),
                               child: _videoController.value.isInitialized
                                   ? Stack(children: [
                                       Positioned.fill(
@@ -150,7 +160,8 @@ class _VideoCardState extends State<VideoCard> {
                                       ),
                                     ])
                                   : Container(
-                                      color: Colors.grey,
+                                      height: 250,
+                                      color: Colors.grey.shade200,
                                       child: const Center(
                                           child: SizedBox(
                                               width: 50,
@@ -162,9 +173,16 @@ class _VideoCardState extends State<VideoCard> {
                       );
                     }).toList(),
                   )
-                : const CircularProgressIndicator(
-                    color: Colors.blueAccent,
-                  ),
+                : Container(
+                    height: 250,
+                    color: Colors.grey.shade200,
+                    child: const Center(
+                        child: SizedBox(
+                            width: 50,
+                            height: 50,
+                            child: CircularProgressIndicator(
+                              color: Colors.blueAccent,
+                            )))),
             const SizedBox(
               height: 10,
             ),
@@ -186,8 +204,6 @@ class _VideoCardState extends State<VideoCard> {
               children: [
                 Text(
                     "ROS12321 - Last update ${DateFormat('MMM dd, yyyy').format(DateTime.fromMillisecondsSinceEpoch(endlinkModel?.lastUpdate ?? 0))}"),
-                //jobservice + last edit
-                //greetings/ tilte
               ],
             ),
           ],
