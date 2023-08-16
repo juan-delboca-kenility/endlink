@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:enterprise_endlink/main.dart';
 import 'package:enterprise_endlink/model/endlink_model.dart';
 import 'package:enterprise_endlink/model/video_model.dart';
 import 'package:enterprise_endlink/service/media/_interface.dart';
@@ -14,22 +15,20 @@ import 'package:get_it/get_it.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:uni_links/uni_links.dart';
-import 'package:flutter/services.dart' show PlatformException;
 
 class EndlinkPage extends StatelessWidget {
-  /// The route name.
-  static const String routeName = '/DealerSignInView';
+  final String securityCode;
+
 
   //#region Initailizers
 
   /// {@macro dealer_sign_in_view}
-  const EndlinkPage({Key? key}) : super(key: key);
+  const EndlinkPage({Key? key, required this.securityCode}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => EndlinkBloc()..add(GetEnlinkModel()),
+      create: (context) => EndlinkBloc()..add(UpdateUrl(url: securityCode))..add(GetEnlinkModel()),
       child: const _Body(),
     );
   }
@@ -67,6 +66,15 @@ class _BodyState extends State<_Body> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  Row(mainAxisAlignment: MainAxisAlignment.end,children: [
+
+                    GestureDetector(
+                      onTap: () {
+                        router.pushReplacementNamed('search');
+                      },
+                      child: const Icon(Icons.close),
+                    )
+                  ],),
                   const VideoCard(),
                   const SizedBox(
                     height: 5,
@@ -138,28 +146,7 @@ class _BodyState extends State<_Body> {
                   const SizedBox(
                     height: 20,
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 100.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                            child: TextFormField(
-                          initialValue: initialUrl,
-                          onChanged: (value) {
-                            final bloc = context.read<EndlinkBloc>();
-                            bloc.add(UpdateUrl(url: value));
-                          },
-                        )),
-                        IconButton(
-                            onPressed: () => bloc.add(GetEnlinkModel()),
-                            icon: const Icon(
-                              Icons.send,
-                              size: 35,
-                              color: Colors.blueAccent,
-                            ))
-                      ],
-                    ),
-                  )
+
                 ],
               )),
         ),

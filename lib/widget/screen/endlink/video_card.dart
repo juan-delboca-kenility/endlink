@@ -26,8 +26,17 @@ class _VideoCardState extends State<VideoCard> {
   String previousVideoURL = '';
   bool _showControls = false;
 
+  @override
+  void dispose() {
+    _videoController.dispose();
+    super.dispose();
+  }
+
   void _initializeVideoPlayer(int index) {
-    final endlinkModel = context.read<EndlinkBloc>().state.endlinkModel;
+    final endlinkModel = context
+        .read<EndlinkBloc>()
+        .state
+        .endlinkModel;
     try {
       _videoController.dispose();
     } catch (_) {}
@@ -36,18 +45,19 @@ class _VideoCardState extends State<VideoCard> {
       Uri.parse(currentVideo?.url ?? ""),
       closedCaptionFile: _loadCaptions(endlinkModel.videos?[index].captionsUrl ?? ""),
       videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
-    )..initialize().then((_) {
+    )
+      ..initialize().then((_) {
         final vtt = _loadCaptions(endlinkModel.videos?[index].captionsUrl ?? "");
         _videoController.setClosedCaptionFile(Future.value(vtt));
         final shouldPlay = currentVideo?.ordinal == 0;
         if (shouldPlay) {
           _videoController.play();
         }
+        _videoController.addListener(() {
+          _videoCheckEnded();
+        });
         setState(() {});
       });
-    _videoController.addListener(() {
-      _videoCheckEnded();
-    });
   }
 
   Future<ClosedCaptionFile> _loadCaptions(String url) async {
@@ -61,15 +71,19 @@ class _VideoCardState extends State<VideoCard> {
   }
 
   _videoCheckEnded() async {
-    final currentIndex = context.read<EndlinkBloc>().state.currentIndex;
-    // if(!_videoController.value.isInitialized|| _videoController.value.duration == const Duration(milliseconds: 0)) return;
-    final position = await _videoController.position ?? const Duration(seconds: 9999999);
-    final videoEnded = (position == _videoController.value.duration);
+    final currentIndex = context
+        .read<EndlinkBloc>()
+        .state
+        .currentIndex;
+    log('_videoCheckEnded: position: ${ _videoController.value.position } duration: ${_videoController.value.duration}');
+    final videoEnded = (_videoController.value.position >= _videoController.value.duration);
     if (videoEnded && currentIndex == 0) {
-      log('CHALLENGE: next page position: $position, duration: ${_videoController.value.duration} and videoEnded: $videoEnded');
-      // _carouselController.nextPage();
+      log('_videoCheckEnded: next page position: ${_videoController.value.position}, duration: ${_videoController.value.duration} and videoEnded: $videoEnded');
+      _carouselController.nextPage();
     }
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -116,109 +130,112 @@ class _VideoCardState extends State<VideoCard> {
                 ),
                 !loading
                     ? CarouselSlider(
-                        carouselController: _carouselController,
-                        options: CarouselOptions(
-                          enableInfiniteScroll: false,
-                          onPageChanged: (index, reason) {
-                            setState(() {
-                              bloc.add(UpdateCurrentIndex(index: index));
-                              // _initializeVideoPlayer(index);
-                              setState(() {});
-                            });
-                          },
-                          viewportFraction: 1,
-                        ),
-                        items: endlinkModel?.videos?.map((video) {
-                          return Builder(
-                            builder: (BuildContext context) {
-                              return Container(
-                                  width: double.infinity,
-                                  margin: const EdgeInsets.symmetric(horizontal: 5.0),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade200,
+                  carouselController: _carouselController,
+                  options: CarouselOptions(
+                    enableInfiniteScroll: false,
+                    onPageChanged: (index, reason) {
+                      setState(() {
+                        bloc.add(UpdateCurrentIndex(index: index));
+                        // _initializeVideoPlayer(index);
+                        setState(() {});
+                      });
+                    },
+                    viewportFraction: 1,
+                  ),
+                  items: endlinkModel?.videos?.map((video) {
+                    return Builder(
+                      builder: (BuildContext context) {
+                        return Container(
+                            width: double.infinity,
+                            margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade200,
+                            ),
+                            child: _videoController.value.isInitialized
+                                ? Stack(alignment: Alignment.center, children: [
+                              Positioned.fill(
+                                  child: AspectRatio(
+                                    aspectRatio: _videoController.value.aspectRatio,
+                                    child: VideoPlayer(_videoController),
+                                  )),
+                              if (_showControls)
+                                Positioned.fill(
+                                  child: IconButton(
+                                    onPressed: () {
+                                      if (_videoController.value.isPlaying) {
+                                        _videoController.pause();
+                                      } else {
+                                        _videoController.play();
+                                      }
+                                      setState(() {});
+                                    },
+                                    icon: _videoController.value.isPlaying
+                                        ? const Icon(
+                                      Icons.pause_circle,
+                                      color: Colors.white,
+                                      size: 35,
+                                    )
+                                        : const Icon(Icons.play_circle, color: Colors.white, size: 35),
                                   ),
-                                  child: _videoController.value.isInitialized
-                                      ? Stack(alignment: Alignment.center, children: [
-                                          Positioned.fill(
-                                              child: AspectRatio(
-                                            aspectRatio: _videoController.value.aspectRatio,
-                                            child: VideoPlayer(_videoController),
-                                          )),
-                                          if (_showControls)
-                                            Positioned.fill(
-                                              child: IconButton(
-                                                onPressed: () {
-                                                  if (_videoController.value.isPlaying) {
-                                                    _videoController.pause();
-                                                  } else {
-                                                    _videoController.play();
-                                                  }
-                                                  setState(() {});
-                                                },
-                                                icon: _videoController.value.isPlaying
-                                                    ? const Icon(
-                                                        Icons.pause_circle,
-                                                        color: Colors.white,
-                                                        size: 35,
-                                                      )
-                                                    : const Icon(Icons.play_circle, color: Colors.white, size: 35),
-                                              ),
-                                            ),
-                                          Positioned(
-                                            bottom: _showControls ? 30 : 10,
-                                            child: ClosedCaption(
-                                              text: _videoController.value.caption.text,
-                                              textStyle: DefaultTextStyle.of(context).style.copyWith(fontSize: 14, color: Colors.white),
-                                            ),
-                                          ),
-                                          if (_showControls)
-                                            Positioned(
-                                              left: 0,
-                                              right: 0,
-                                              bottom: 0,
-                                              child: CustomVideoPlayerControls(
-                                                margin: const EdgeInsets.all(16.0),
-                                                playing: _videoController.value.isPlaying,
-                                                position: _videoController.value.position.inMilliseconds,
-                                                duration: _videoController.value.duration.inMilliseconds,
-                                                seek: (pos) async {
-                                                  await seek(Duration(milliseconds: pos));
-                                                },
-                                                onPlayPressed: () {
-                                                  if (_videoController.value.isPlaying) {
-                                                    _videoController.pause();
-                                                  } else {
-                                                    _videoController.play();
-                                                  }
-                                                  setState(() {});
-                                                },
-                                              ),
-                                            ),
-                                        ])
-                                      : Container(
-                                          height: 250,
-                                          color: Colors.grey.shade200,
-                                          child: const Center(
-                                              child: SizedBox(
-                                                  width: 50,
-                                                  height: 50,
-                                                  child: CircularProgressIndicator(
-                                                    color: Colors.blueAccent,
-                                                  )))));
-                            },
-                          );
-                        }).toList(),
-                      )
+                                ),
+                              Positioned(
+                                bottom: _showControls ? 30 : 10,
+                                child: ClosedCaption(
+                                  text: _videoController.value.caption.text,
+                                  textStyle: DefaultTextStyle
+                                      .of(context)
+                                      .style
+                                      .copyWith(fontSize: 14, color: Colors.white),
+                                ),
+                              ),
+                              if (_showControls)
+                                Positioned(
+                                  left: 0,
+                                  right: 0,
+                                  bottom: 0,
+                                  child: CustomVideoPlayerControls(
+                                    margin: const EdgeInsets.all(16.0),
+                                    playing: _videoController.value.isPlaying,
+                                    position: _videoController.value.position.inMilliseconds,
+                                    duration: _videoController.value.duration.inMilliseconds,
+                                    seek: (pos) async {
+                                      await seek(Duration(milliseconds: pos));
+                                    },
+                                    onPlayPressed: () {
+                                      if (_videoController.value.isPlaying) {
+                                        _videoController.pause();
+                                      } else {
+                                        _videoController.play();
+                                      }
+                                      setState(() {});
+                                    },
+                                  ),
+                                ),
+                            ])
+                                : Container(
+                                height: 250,
+                                color: Colors.grey.shade200,
+                                child: const Center(
+                                    child: SizedBox(
+                                        width: 50,
+                                        height: 50,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.blueAccent,
+                                        )))));
+                      },
+                    );
+                  }).toList(),
+                )
                     : Container(
-                        height: 250,
-                        color: Colors.grey.shade200,
-                        child: const Center(
-                            child: SizedBox(
-                                width: 50,
-                                height: 50,
-                                child: CircularProgressIndicator(
-                                  color: Colors.blueAccent,
-                                )))),
+                    height: 250,
+                    color: Colors.grey.shade200,
+                    child: const Center(
+                        child: SizedBox(
+                            width: 50,
+                            height: 50,
+                            child: CircularProgressIndicator(
+                              color: Colors.blueAccent,
+                            )))),
                 const SizedBox(
                   height: 10,
                 ),
@@ -244,13 +261,15 @@ class _VideoCardState extends State<VideoCard> {
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       Text(
-                          "${endlinkModel.jobService} - Last update ${DateFormat('MMM dd, yyyy').format(DateTime.fromMillisecondsSinceEpoch(endlinkModel?.lastUpdate ?? 0))}"),
+                          "${endlinkModel.jobService} - Last update ${DateFormat('MMM dd, yyyy').format(
+                              DateTime.fromMillisecondsSinceEpoch(endlinkModel?.lastUpdate ?? 0))}"),
                     ],
                   ),
                 ),
               ],
             )));
   }
+
   Future<void> seek(Duration position) async {
     log("[video] seek $position");
 
